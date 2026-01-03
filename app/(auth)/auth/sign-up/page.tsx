@@ -32,6 +32,9 @@ const SignUpPage = () => {
       password: "",
     },
   });
+  function onSubmit() {
+    console.log("data")
+  }
   return (
     <Card >
       <CardHeader>
@@ -39,7 +42,7 @@ const SignUpPage = () => {
         <CardDescription>Create an account </CardDescription>
       </CardHeader>
       <CardContent>
-        <form>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <FieldGroup className="gap-y-4">
             <Controller
               name="name"
@@ -47,7 +50,7 @@ const SignUpPage = () => {
               render={({ field, fieldState }) => (
                 <Field>
                   <FieldLabel>Full Name</FieldLabel>
-                  <Input placeholder="full name" {...field} />
+                  <Input aria-invalid={fieldState.invalid} placeholder="full name" {...field} />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}
