@@ -15,16 +15,22 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 // import { useRouter } from "next/router";
-import React, { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import z from "zod";
 
 const SignUpPage = () => {
-    const [isPending, startTransition] = useTransition();
-  // const router = useRouter();
-  const form = useForm({
+  const router = useRouter();
+   const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
       email: "",
@@ -32,25 +38,44 @@ const SignUpPage = () => {
       password: "",
     },
   });
-  function onSubmit() {
-    console.log("data")
+  async function onSubmit(data: z.infer<typeof signUpSchema>) {
+
+      await authClient.signUp.email({
+        email: data.email,
+        name: data.name,
+        password: data.password,
+        fetchOptions: {
+          onSuccess: () => {
+            toast.success("Loged out successfully");
+            router.replace("/");
+          },
+          onError: (error) => {
+            toast.error(error.error.message);
+          },
+        },
+      });
+
   }
   return (
-    <Card >
+    <Card>
       <CardHeader>
         <CardTitle>Sign Up</CardTitle>
         <CardDescription>Create an account </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="gap-y-4">
             <Controller
               name="name"
-              control={form.control}
+              control={control}
               render={({ field, fieldState }) => (
                 <Field>
                   <FieldLabel>Full Name</FieldLabel>
-                  <Input aria-invalid={fieldState.invalid} placeholder="full name" {...field} />
+                  <Input
+                    aria-invalid={fieldState.invalid}
+                    placeholder="full name"
+                    {...field}
+                  />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}
@@ -59,7 +84,7 @@ const SignUpPage = () => {
             />
             <Controller
               name="email"
-              control={form.control}
+              control={control}
               render={({ field, fieldState }) => (
                 <Field>
                   <FieldLabel>Email</FieldLabel>
@@ -78,7 +103,7 @@ const SignUpPage = () => {
 
             <Controller
               name="password"
-              control={form.control}
+              control={control}
               render={({ field, fieldState }) => (
                 <Field>
                   <FieldLabel>Password</FieldLabel>
@@ -94,8 +119,8 @@ const SignUpPage = () => {
                 </Field>
               )}
             />
-            <Button disabled={isPending}>
-              {isPending ? (
+            <Button disabled={isSubmitting}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
                   <span>Loading...</span>

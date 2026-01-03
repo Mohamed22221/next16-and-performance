@@ -16,25 +16,44 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
-
+import { toast } from "sonner";
+import z from "zod";
 
 export default function LoginPage() {
-  const [isPending, startTransition] = useTransition();
 
+  const router = useRouter();
 
-  const form = useForm({
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
-
       password: "",
     },
   });
-
+  async function onSubmit(data: z.infer<typeof loginSchema>) {
+    await authClient.signIn.email({
+      email: data.email,
+      password: data.password,
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success("Logged in successfully");
+          router.replace("/");
+        },
+        onError: (error) => {
+          toast.error(error.error.message);
+        },
+      },
+    });
+  }
 
   return (
     <Card>
@@ -43,11 +62,11 @@ export default function LoginPage() {
         <CardDescription>Login to get started right away</CardDescription>
       </CardHeader>
       <CardContent>
-        <form >
+        <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup className="gap-y-4">
             <Controller
               name="email"
-              control={form.control}
+              control={control}
               render={({ field, fieldState }) => (
                 <Field>
                   <FieldLabel>Email</FieldLabel>
@@ -66,7 +85,7 @@ export default function LoginPage() {
 
             <Controller
               name="password"
-              control={form.control}
+              control={control}
               render={({ field, fieldState }) => (
                 <Field>
                   <FieldLabel>Password</FieldLabel>
@@ -83,8 +102,8 @@ export default function LoginPage() {
               )}
             />
 
-            <Button disabled={isPending}>
-              {isPending ? (
+            <Button disabled={isSubmitting}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
                   <span>Loading...</span>
